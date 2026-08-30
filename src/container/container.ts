@@ -10,6 +10,7 @@ import { Cue } from "../view/cue"
 import { CueHit } from "../view/cuehit"
 import { CueBallSpin } from "../view/cueballspin"
 import { PointerTap } from "../view/pointertap"
+import { BallTap } from "../view/balltap"
 import { Keyboard } from "../events/keyboard"
 import { Sound } from "../view/sound"
 import { Chat } from "../view/chat"
@@ -64,6 +65,7 @@ export class Container {
   cueHit?: CueHit
   cueBallSpin?: CueBallSpin
   pointerTap?: PointerTap
+  ballTap?: BallTap
   sound: Sound
   chat: Chat
   sliders: Sliders
@@ -520,6 +522,7 @@ export class Container {
       this.controller.onFirst()
       this.updateCueHit(controller)
       this.updatePointerTap(controller)
+      this.updateBallTap(controller)
     }
   }
 
@@ -555,6 +558,20 @@ export class Container {
       this.pointerTap.enable()
     } else {
       this.pointerTap?.disable()
+    }
+  }
+
+  /** BallTap (touch tap-to-aim-at-ball) is armed only while Aim is active,
+   * matching CueHit's scope rather than PointerTap's broader one, since
+   * aiming-at-a-ball only makes sense while actually aiming. */
+  private updateBallTap(controller: Controller) {
+    if (controller instanceof Aim) {
+      if (!this.ballTap) {
+        this.ballTap = new BallTap(this)
+      }
+      this.ballTap.enable()
+    } else {
+      this.ballTap?.disable()
     }
   }
 }

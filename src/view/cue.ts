@@ -153,6 +153,23 @@ export class Cue {
     this.aim.angle = atan2(lineTo.y, lineTo.x)
   }
 
+  /** Snap the aim angle to point directly at ball, e.g. from a tap on it. */
+  aimAtBall(ball, table) {
+    if (!this.aimInputs || this.aimInputs.isDisabled() || !ball) {
+      return
+    }
+    this.aimAtNext(table.cueball, ball)
+    if (this.aimLimits) {
+      this.aim.angle = Math.min(
+        this.aimLimits.angleMax,
+        Math.max(this.aimLimits.angleMin, this.aim.angle)
+      )
+    }
+    if (this.root) this.root.rotation.z = this.aim.angle
+    this.aimInputs.showOverlap()
+    this.avoidCueTouchingOtherBall(table)
+  }
+
   adjustSpin(delta: Vector3, table: Table) {
     if (!this.aimInputs || this.aimInputs.isDisabled()) {
       return
