@@ -2,6 +2,7 @@ import { NineBall } from "./nineball"
 import { EightBall } from "./eightball"
 import { Rules } from "./rules"
 import { Snooker } from "./snooker"
+import { SniperPool } from "./sniperpool"
 import { ThreeCushion } from "./threecushion"
 import { Drill } from "./drill"
 import { Sagu } from "./sagu"
@@ -19,6 +20,8 @@ export class RuleFactory {
         return new EightBall(container)
       case "snooker":
         return new Snooker(container)
+      case "sniperpool":
+        return new SniperPool(container)
       default:
         return new NineBall(container)
     }
