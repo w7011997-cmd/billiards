@@ -33,6 +33,24 @@ export class End extends Controller {
     if (isDiagram) {
       return
     }
+
+    // Bridge to the parent frame (Sniper's match room) so the outer app
+    // can automatically record the result instead of relying only on a
+    // manual self-report. Fires for both the winner and the loser, on
+    // every real (non-diagram) game end.
+    if (this.result) {
+      globalThis.parent?.postMessage(
+        {
+          type: "sniper-match-complete",
+          amIWinner: MatchResultHelper.isWinner(this.result),
+          winnerName: this.result.winner,
+          winnerScore: this.result.winnerScore,
+          loserScore: this.result.loserScore,
+        },
+        "*"
+      )
+    }
+
     if (
       this.result &&
       this.container.scoreReporter &&
