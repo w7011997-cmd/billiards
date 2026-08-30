@@ -51,8 +51,6 @@ export class SniperPool implements Rules {
     return table
   }
 
-  // Same physical rack as standard eight-ball: cue + balls 1-15
-  // (1-7 solid, 8 black, 9-15 stripe). No group assignment is used.
   rack(): Ball[] {
     return Rack.fromInitParam(Rack.eightBall())
   }
@@ -97,8 +95,6 @@ export class SniperPool implements Rules {
     return ball.label === 8 ? 2 : 1
   }
 
-  // Open table: any object ball is a legal first collision.
-  // The only fouls are hitting nothing at all, or potting the cue ball.
   foulReason(outcome: Outcome[]): string | null {
     const table = this.container.table
     const cueball = table.cueball
@@ -132,8 +128,6 @@ export class SniperPool implements Rules {
   }
 
   respot(outcome: Outcome[]): Ball[] {
-    // Any ball potted on a foul shot goes back onto the table (foot spot),
-    // instead of counting. This includes the black.
     if (!this.foulReason(outcome)) {
       return []
     }
@@ -162,78 +156,109 @@ export class SniperPool implements Rules {
     const session = Session.getInstance()
     const isScratch = reason.startsWith("Cue ball potted")
 
-    // Any balls potted on this foul shot don't count, and go back on the table.
-    this.respotAndSend(outcome)
+    try {
+      this.respotAndSend(outcome)
 
-    // Score penalty: -1 to the fouling player, or +1 to the opponent if the
-    // fouling player has no points to lose. Applies to both foul types.
-    if (session.myScore() > 0) {
-      session.addMyScore(-1)
-    } else {
-      session.addOpponentScore(1)
-    }
+      if (session.myScore() > 0) {
+        session.addMyScore(-1)
+      } else {
+        session.addOpponentScore(1)
+      }
 
-    this.container.notify({
-      type: "Foul",
-      title: "FOUL",
-      subtext: reason,
-      extra: isScratch ? "Ball in hand" : undefined,
-    })
+      this.container.notify({
+        type: "Foul",
+        title: "FOUL",
+        subtext: reason,
+        extra: isScratch ? "Ball in hand" : undefined,
+      })
 
-    this.startTurn()
+      this.startTurn()
 
-    if (isScratch) {
-      const cueball = this.container.table.cueball
-      const startPos = cueball.onTable()
-        ? cueball.pos.clone()
-        : this.placeBall()
-      roundVec(startPos)
-      this.container.sendEvent(new PlaceBallEvent(startPos, undefined, true))
+      if (isScratch) {
+        const cueball = this.container.table.cueball
+        const startPos = cueball.onTable()
+          ? cueball.pos.clone()
+          : this.placeBall()
+        roundVec(startPos)
+        this.container.sendEvent(
+          new PlaceBallEvent(startPos, undefined, true)
+        )
+        if (this.container.isSinglePlayer) {
+          return new PlaceBall(this.container, startPos)
+        }
+        return new WatchAim(this.container)
+      }
+
+      this.container.sendEvent(new StartAimEvent())
       if (this.container.isSinglePlayer) {
-        return new PlaceBall(this.container, startPos)
+        this.container.sendEvent(
+          new WatchEvent(this.container.table.serialise())
+        )
+        return new Aim(this.container)
+      }
+      return new WatchAim(this.container)
+    } catch (err) {
+      this.container.notify({
+        type: "Foul",
+        title: "DEBUG ERROR (screenshot this)",
+        subtext: String(err),
+      })
+      this.startTurn()
+      this.container.sendEvent(new StartAimEvent())
+      if (this.container.isSinglePlayer) {
+        return new Aim(this.container)
       }
       return new WatchAim(this.container)
     }
-
-    // Whiff (no contact): no ball-in-hand, play continues from where the
-    // cue ball came to rest.
-    this.container.sendEvent(new StartAimEvent())
-    if (this.container.isSinglePlayer) {
-      this.container.sendEvent(
-        new WatchEvent(this.container.table.serialise())
-      )
-      return new Aim(this.container)
-    }
-    return new WatchAim(this.container)
   }
 
   private handlePot(outcome: Outcome[], pots: Ball[]): Controller {
-    const session = Session.getInstance()
-    const gained = pots.reduce((sum, ball) => sum + this.ballValue(ball), 0)
-    this.currentBreak += gained
-    session.addMyScore(gained)
+    try {
+      const session = Session.getInstance()
+      const gained = pots.reduce((sum, ball) => sum + this.ballValue(ball), 0)
+      this.currentBreak += gained
+      session.addMyScore(gained)
 
-    const table = this.container.table
-    this.container.sound.playSuccess(table.inPockets())
+      const table = this.container.table
+      this.container.sound.playSuccess(table.inPockets())
 
-    if (this.isEndOfGame(outcome)) {
-      const isWinner = session.myScore() > session.opponentScore()
-      return this.handleGameEnd(isWinner)
+      if (this.isEndOfGame(outcome)) {
+        const isWinner = session.myScore() > session.opponentScore()
+        return this.handleGameEnd(isWinner)
+      }
+
+      this.container.sendEvent(new WatchEvent(table.serialise()))
+      return new Aim(this.container)
+    } catch (err) {
+      this.container.notify({
+        type: "Foul",
+        title: "DEBUG ERROR (screenshot this)",
+        subtext: String(err),
+      })
+      this.container.sendEvent(new WatchEvent(this.container.table.serialise()))
+      return new Aim(this.container)
     }
-
-    this.container.sendEvent(new WatchEvent(table.serialise()))
-    return new Aim(this.container)
   }
 
   private handleMiss(): Controller {
-    const table = this.container.table
-    this.container.sendEvent(new StartAimEvent())
-    if (this.container.isSinglePlayer) {
-      this.container.sendEvent(new WatchEvent(table.serialise()))
+    try {
+      const table = this.container.table
+      this.container.sendEvent(new StartAimEvent())
+      if (this.container.isSinglePlayer) {
+        this.container.sendEvent(new WatchEvent(table.serialise()))
+        this.startTurn()
+        return new Aim(this.container)
+      }
+      return new WatchAim(this.container)
+    } catch (err) {
+      this.container.notify({
+        type: "Foul",
+        title: "DEBUG ERROR (screenshot this)",
+        subtext: String(err),
+      })
       this.startTurn()
-      return new Aim(this.container)
+      return new WatchAim(this.container)
     }
-    return new WatchAim(this.container)
   }
 
   private respotAndSend(outcome: Outcome[]): void {
