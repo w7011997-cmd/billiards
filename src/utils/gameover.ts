@@ -60,6 +60,12 @@ export const gameOverButtons = {
     if (isSinglePlayer) {
       return this.newGame + " " + this.lobby
     }
+    // Sniper's own app UI (outside this iframe) handles rematch/next-steps
+    // for sniperpool matches, since it needs stake input and balance checks
+    // this dialog has no way to do.
+    if (ruletype === "sniperpool") {
+      return ""
+    }
     if (!ruletype) return this.lobby
     const rematch = this.rematch(opponentId, opponentName, ruletype, nextTurnId)
     return rematch ? rematch + " " + this.lobby : this.lobby
