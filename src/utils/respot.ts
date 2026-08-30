@@ -59,6 +59,7 @@ export class Respot {
     }
     ball.pos.copy(pos)
     ball.state = State.Stationary
+    return ball
   }
 
   static closest(cueball: Ball, balls: Ball[]) {
