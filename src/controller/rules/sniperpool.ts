@@ -223,6 +223,30 @@ export class SniperPool implements Rules {
       this.container.sound.playSuccess(table.inPockets())
 
       if (this.isEndOfGame(outcome)) {
+        if (session.myScore() === session.opponentScore()) {
+          // Tied at table-clear: sudden death. Respot just the 8-ball
+          // using the exact same mechanism already proven safe for every
+          // foul-respot in this file, and let play continue. Whoever
+          // legally pots it scores 2 via the normal handlePot path below,
+          // which deterministically breaks the tie — no new win-condition
+          // logic needed.
+          const eightBall = table.balls.find((b) => b.label === 8)
+          if (eightBall) {
+            const footSpot = new Vector3(TableGeometry.tableX / 2, 0, 0)
+            Respot.respotBehind(footSpot, eightBall, table)
+            eightBall.fround()
+            this.container.sendEvent(
+              RerackEvent.fromJson({ balls: [eightBall.serialise()] })
+            )
+          }
+          this.container.notify({
+            type: "Foul",
+            title: "SUDDEN DEATH",
+            subtext: "Scores are tied \u2014 pot the 8-ball to win!",
+          })
+          this.container.sendEvent(new WatchEvent(table.serialise()))
+          return new Aim(this.container)
+        }
         const isWinner = session.myScore() > session.opponentScore()
         return this.handleGameEnd(isWinner)
       }

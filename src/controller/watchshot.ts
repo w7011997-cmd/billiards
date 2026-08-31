@@ -43,7 +43,15 @@ export class WatchShot extends ControllerBase {
       this.container.rules.isEndOfGame(outcome) &&
       !Session.isBotMode()
     ) {
-      return this.container.rules.handleGameEnd(false)
+      const session = Session.getInstance()
+      if (session.myScore() === session.opponentScore()) {
+        // Tied \u2014 the shooter's client is starting sudden death and will
+        // broadcast the respotted ball via RerackEvent. Keep watching.
+        return this
+      }
+      return this.container.rules.handleGameEnd(
+        session.myScore() > session.opponentScore()
+      )
     }
     return this
   }
