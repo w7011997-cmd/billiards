@@ -406,3 +406,9 @@
 .notification-high-breaks {
   display: none !important;
 }
+
+/* Sniper: high-break "upload" buttons link to tailuge's external
+   scoreboard site (scoreboard-tailuge.vercel.app) — hidden entirely. */
+.notification-high-breaks {
+  display: none !important;
+}

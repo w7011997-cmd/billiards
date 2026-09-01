@@ -76,3 +76,11 @@
 #lobbyOverlay {
   display: none !important;
 }
+
+/* Sniper: the lobby badge links directly to tailuge's public lobby
+   (billiards.tailuge.workers.dev) — Sniper handles its own matchmaking,
+   so this is hidden rather than left as a way to navigate players away
+   from the app. */
+#lobbyOverlay {
+  display: none !important;
+}
