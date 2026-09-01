@@ -164,6 +164,7 @@ export class SniperPool implements Rules {
       } else {
         session.addOpponentScore(1)
       }
+      this.sendScoreUpdate()
 
       this.container.notify({
         type: "Foul",
@@ -218,6 +219,7 @@ export class SniperPool implements Rules {
       const gained = pots.reduce((sum, ball) => sum + this.ballValue(ball), 0)
       this.currentBreak += gained
       session.addMyScore(gained)
+      this.sendScoreUpdate()
 
       const table = this.container.table
       this.container.sound.playSuccess(table.inPockets())
@@ -293,6 +295,11 @@ export class SniperPool implements Rules {
         RerackEvent.fromJson({ balls: respotted.map((b) => b.serialise()) })
       )
     }
+  }
+
+  private sendScoreUpdate(): void {
+    const { p1, p2 } = Session.getInstance().orderedScoresForHud()
+    globalThis.parent?.postMessage({ type: "sniper-score-update", p1, p2 }, "*")
   }
 
   handleGameEnd(isWinner: boolean, endSubtext?: string): Controller {
