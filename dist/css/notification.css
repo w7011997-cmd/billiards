@@ -400,3 +400,9 @@
   background: var(--notification-black-15);
   border-color: var(--notification-black-30);
 }
+
+/* Sniper: high-break "upload" buttons link to tailuge's external
+   scoreboard site (scoreboard-tailuge.vercel.app) — hidden entirely. */
+.notification-high-breaks {
+  display: none !important;
+}
