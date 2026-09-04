@@ -92,7 +92,7 @@ export class MatchResultHelper {
       this.notifyWin(container, rulename, subtext)
       this.sendLossNotification(container, rulename)
     } else if (Session.isSpectator()) {
-      this.notifySpectator(container, subtext)
+      this.notifySpectator(container, rulename, subtext)
     } else {
       this.notifyLoss(container, rulename, subtext)
       this.sendWinNotification(container, rulename)
@@ -137,15 +137,25 @@ export class MatchResultHelper {
     })
   }
 
-  private static notifySpectator(container: Container, subtext: string) {
+  private static notifySpectator(
+    container: Container,
+    rulename: string,
+    subtext: string
+  ) {
+    const session = Session.getInstance()
+    const { p1, p2 } = session.orderedScoresForHud()
+    const names = session.orderedNamesForHud()
+    const winnerName =
+      (p1 >= p2 ? names.p1Name : names.p2Name) || "Winner"
+
     container.notifyLocal({
       type: "GameOver",
-      title: "GAME OVER",
+      title: `${winnerName} Won`,
       subtext: subtext,
       highBreaks: this.getHighBreaks(container),
       icon: "🏆",
       extraClass: "",
-      extra: gameOverButtons.lobby,
+      extra: gameOverButtons.forMode(false, undefined, undefined, rulename, undefined),
       duration: 0,
     })
   }

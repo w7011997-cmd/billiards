@@ -159,7 +159,21 @@ export class SniperPool implements Rules {
     try {
       this.respotAndSend(outcome)
 
-      if (session.myScore() > 0) {
+      // Scratching while also potting a non-black ball waives the usual
+      // -1 penalty (the floor rule below still applies if you have nothing
+      // to lose). A scratch involving the black, or a plain scratch/whiff
+      // with nothing potted, keeps the standard penalty.
+      const table = this.container.table
+      const pottedNonBlack = Outcome.pots(outcome)
+        .filter((b) => b !== table.cueball)
+        .some((b) => b.label !== 8)
+      const waivePenalty = isScratch && pottedNonBlack
+
+      if (waivePenalty) {
+        if (session.myScore() === 0) {
+          session.addOpponentScore(1)
+        }
+      } else if (session.myScore() > 0) {
         session.addMyScore(-1)
       } else {
         session.addOpponentScore(1)

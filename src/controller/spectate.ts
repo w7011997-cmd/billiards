@@ -138,4 +138,17 @@ export class Spectate extends ControllerBase {
     this.commonKeyHandler(input)
     return this
   }
+
+  override handleStationary(_: any): Controller {
+    const rules = this.container.rules
+    const outcome = this.container.table.outcome
+    if (
+      rules.rulename !== "snooker" &&
+      rules.isEndOfGame(outcome) &&
+      !Session.isBotMode()
+    ) {
+      return rules.handleGameEnd(false)
+    }
+    return this
+  }
 }
