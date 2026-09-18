@@ -65,6 +65,14 @@ export class BallMesh {
   shadow: Mesh
   spinAxisArrow: ArrowHelper
   trace: Trace
+  /**
+   * Purely cosmetic per-shot trail (distinct from `trace`, which only shows
+   * during Replay/analysis via Table.showTraces). Undefined unless
+   * `enableCosmeticTrail` was called — currently only done for the cue ball,
+   * from Container, when a `custom.trail.colour` URL param is present.
+   */
+  cosmeticTrail?: Trace
+  private wasStationary = true
   color: Color
   private ghosts: Line[] = []
 
@@ -86,12 +94,34 @@ export class BallMesh {
     this.initialiseMesh(this.color, label, appearance)
   }
 
+  /**
+   * Enables the always-on cosmetic trail with the given colour. Safe to call
+   * once per ball, before or after addToScene (addToScene picks it up if
+   * called after; call before addToScene otherwise for it to appear).
+   */
+  enableCosmeticTrail(colour: string | number) {
+    this.cosmeticTrail = new Trace(500, colour)
+    this.cosmeticTrail.line.visible = true
+  }
+
   updateAll(ball, t) {
     const isStationary = ball.state === State.Stationary
     const positionChanged = !this.mesh.position.equals(ball.pos)
     if (isStationary && !positionChanged) {
       return
     }
+
+    if (this.cosmeticTrail) {
+      if (this.wasStationary && !isStationary) {
+        // Fresh trail each time the ball sets off from rest, so shots don't
+        // visually chain into one long streak across a whole turn.
+        this.cosmeticTrail.reset()
+      }
+      if (positionChanged) {
+        this.cosmeticTrail.addTrace(ball.pos, ball.vel)
+      }
+    }
+    this.wasStationary = isStationary
 
     this.updatePosition(ball.pos)
     if (this.spinAxisArrow.visible) {
@@ -198,6 +228,9 @@ export class BallMesh {
     scene.add(this.shadow)
     scene.add(this.spinAxisArrow)
     scene.add(this.trace.line)
+    if (this.cosmeticTrail) {
+      scene.add(this.cosmeticTrail.line)
+    }
   }
 
   private static colorVerticesForFace(face, verticies, r, g, b) {

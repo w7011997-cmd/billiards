@@ -132,6 +132,17 @@ export class Container {
     this.freeAim = freeAim
     this.rules = RuleFactory.create(ruletype, this)
     this.table = this.rules.table()
+
+    // Purely cosmetic: a custom-coloured trail behind the cue ball, driven by
+    // the equipped shop item (see Sniper's MatchRoom.tsx). Independent of
+    // Table.showTraces, which only shows the analysis trajectory during Replay.
+    const trailColourHex = new URLSearchParams(
+      globalThis.location?.search ?? ""
+    ).get("custom.trail.colour")
+    if (trailColourHex && this.table.balls[0]?.ballmesh) {
+      this.table.balls[0].ballmesh.enableCosmeticTrail(trailColourHex)
+    }
+
     this.view = new View(element, this.table, assets, portraitMode)
     this.table.cue.aimInputs = new AimInputs(this)
     if (keyboard) {
