@@ -19,6 +19,21 @@ export class TableMesh {
   private static readonly cylinderCache = new Map<string, CylinderGeometry>()
   private static readonly boxCache = new Map<string, BoxGeometry>()
 
+  /**
+   * Reads the `custom.table.clothColour` URL param (a hex string like
+   * `#1e40af`) and returns it as a numeric three.js color, falling back to
+   * the default cloth blue when absent or malformed. Cosmetic only, mirrors
+   * TableConfig.tableSizeFromUrl's read-directly-from-location pattern.
+   */
+  static clothColorFromUrl(): number {
+    const DEFAULT = 0x243599
+    const urlParams = new URLSearchParams(globalThis.location?.search ?? "")
+    const hex = urlParams.get("custom.table.clothColour")
+    if (!hex) return DEFAULT
+    const parsed = parseInt(hex.replace("#", ""), 16)
+    return Number.isNaN(parsed) ? DEFAULT : parsed
+  }
+
   generateTable(hasPockets: boolean) {
     const group = new Group()
     const light = new PointLight(0xf0f0e8, 22)
@@ -43,7 +58,7 @@ export class TableMesh {
   }
 
   private readonly cloth = new MeshPhongMaterial({
-    color: 0x243599,
+    color: TableMesh.clothColorFromUrl(),
     wireframe: false,
     flatShading: true,
     transparent: false,
