@@ -115,6 +115,7 @@ export class BallMesh {
 
   updateAll(ball, t) {
     this.cosmeticTrail?.update(t)
+    this.cosmeticTrail?.updateAura(ball.pos, t, R)
 
     const isStationary = ball.state === State.Stationary
     const positionChanged = !this.mesh.position.equals(ball.pos)
@@ -127,6 +128,7 @@ export class BallMesh {
         // Fresh trail each time the ball sets off from rest, so shots don't
         // visually chain into one long streak across a whole turn.
         this.cosmeticTrail.reset()
+        this.cosmeticTrail.burst(ball.pos)
       }
       if (positionChanged) {
         this.cosmeticTrail.addTrace(ball.pos)
