@@ -18,6 +18,7 @@ import { State } from "../model/ball"
 import { norm, up, zero } from "./../utils/three-utils"
 import { R } from "../model/physics/constants"
 import { Trace } from "./trace"
+import { TrailParticles, styleForColour } from "./trailparticles"
 import { BallMaterialFactory } from "./ballmaterialfactory"
 import { Session } from "../network/client/session"
 import { BallAppearance } from "./ballappearance"
@@ -66,12 +67,13 @@ export class BallMesh {
   spinAxisArrow: ArrowHelper
   trace: Trace
   /**
-   * Purely cosmetic per-shot trail (distinct from `trace`, which only shows
-   * during Replay/analysis via Table.showTraces). Undefined unless
-   * `enableCosmeticTrail` was called — currently only done for the cue ball,
-   * from Container, when a `custom.trail.colour` URL param is present.
+   * Purely cosmetic per-shot particle trail (distinct from `trace`, which
+   * only shows during Replay/analysis via Table.showTraces). Undefined
+   * unless `enableCosmeticTrail` was called — currently only done for the
+   * cue ball, from Container, driven by session.customParams/opponentParams
+   * "trail.colour" and switched on turn change via setCosmeticTrailColour.
    */
-  cosmeticTrail?: Trace
+  cosmeticTrail?: TrailParticles
   private wasStationary = true
   color: Color
   private ghosts: Line[] = []
@@ -95,16 +97,25 @@ export class BallMesh {
   }
 
   /**
-   * Enables the always-on cosmetic trail with the given colour. Safe to call
-   * once per ball, before or after addToScene (addToScene picks it up if
-   * called after; call before addToScene otherwise for it to appear).
+   * Enables the always-on cosmetic particle trail with the given colour's
+   * auto-picked theme. Safe to call once per ball, before or after
+   * addToScene (addToScene picks it up if called after; call before
+   * addToScene otherwise for it to appear).
    */
   enableCosmeticTrail(colour: string | number) {
-    this.cosmeticTrail = new Trace(500, colour)
-    this.cosmeticTrail.line.visible = true
+    this.cosmeticTrail = new TrailParticles(styleForColour(colour))
+  }
+
+  /** Swaps the trail's active colour/theme in place — used when the active
+   * shooter changes (mine vs opponent's equipped trail), without recreating
+   * the underlying Points object. */
+  setCosmeticTrailColour(colour: string | number) {
+    this.cosmeticTrail?.setStyle(styleForColour(colour))
   }
 
   updateAll(ball, t) {
+    this.cosmeticTrail?.update(t)
+
     const isStationary = ball.state === State.Stationary
     const positionChanged = !this.mesh.position.equals(ball.pos)
     if (isStationary && !positionChanged) {
@@ -118,7 +129,7 @@ export class BallMesh {
         this.cosmeticTrail.reset()
       }
       if (positionChanged) {
-        this.cosmeticTrail.addTrace(ball.pos, ball.vel)
+        this.cosmeticTrail.addTrace(ball.pos)
       }
     }
     this.wasStationary = isStationary
@@ -229,7 +240,7 @@ export class BallMesh {
     scene.add(this.spinAxisArrow)
     scene.add(this.trace.line)
     if (this.cosmeticTrail) {
-      scene.add(this.cosmeticTrail.line)
+      scene.add(this.cosmeticTrail.points)
     }
   }
 

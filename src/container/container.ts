@@ -94,6 +94,12 @@ export class Container {
    * simulation accuracy. */
   timeScale = 1
 
+  /** This player's / the opponent's equipped cue-ball trail colour (hex),
+   * read once from session.customParams/opponentParams at construction and
+   * swapped in setActiveCue as the active shooter changes. */
+  private myTrailColour?: string
+  private opponentTrailColour?: string
+
   private hudScores = {
     p1: 0,
     p2: 0,
@@ -133,14 +139,19 @@ export class Container {
     this.rules = RuleFactory.create(ruletype, this)
     this.table = this.rules.table()
 
-    // Purely cosmetic: a custom-coloured trail behind the cue ball, driven by
-    // the equipped shop item (see Sniper's MatchRoom.tsx). Independent of
-    // Table.showTraces, which only shows the analysis trajectory during Replay.
-    const trailColourHex = new URLSearchParams(
-      globalThis.location?.search ?? ""
-    ).get("custom.trail.colour")
-    if (trailColourHex && this.table.balls[0]?.ballmesh) {
-      this.table.balls[0].ballmesh.enableCosmeticTrail(trailColourHex)
+    // Purely cosmetic: a custom-coloured particle trail behind the cue ball,
+    // driven by each player's equipped shop item (see Sniper's
+    // MatchRoom.tsx). Independent of Table.showTraces, which only shows the
+    // analysis trajectory during Replay. Uses the same session.customParams/
+    // opponentParams plumbing as the cue's own cosmetics — the *active*
+    // colour then follows whichever controller (Aim vs WatchAim) is
+    // currently in play, switched in setActiveCue below.
+    const trailSession = Session.getInstance()
+    this.myTrailColour = trailSession.customParams["trail.colour"]
+    this.opponentTrailColour = trailSession.opponentParams["trail.colour"]
+    const initialTrailColour = this.myTrailColour ?? this.opponentTrailColour
+    if (initialTrailColour && this.table.balls[0]?.ballmesh) {
+      this.table.balls[0].ballmesh.enableCosmeticTrail(initialTrailColour)
     }
 
     this.view = new View(element, this.table, assets, portraitMode)
@@ -260,9 +271,24 @@ export class Container {
     if (mine) {
       cue.p1.visible = true
       cue.p2.visible = false
+      this.applyTrailColour(this.myTrailColour)
     } else if (theirs) {
       cue.p1.visible = false
       cue.p2.visible = true
+      this.applyTrailColour(this.opponentTrailColour)
+    }
+  }
+
+  /** Swaps the cue ball's cosmetic trail to the given player's equipped
+   * colour. No-op if that player has no trail equipped, or if the ball
+   * mesh isn't ready yet. */
+  private applyTrailColour(colour?: string) {
+    const ballmesh = this.table.balls[0]?.ballmesh
+    if (!ballmesh || !colour) return
+    if (ballmesh.cosmeticTrail) {
+      ballmesh.setCosmeticTrailColour(colour)
+    } else {
+      ballmesh.enableCosmeticTrail(colour)
     }
   }
 
