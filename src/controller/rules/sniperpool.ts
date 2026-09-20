@@ -246,7 +246,11 @@ export class SniperPool implements Rules {
           // legally pots it scores 2 via the normal handlePot path below,
           // which deterministically breaks the tie — no new win-condition
           // logic needed.
-          const eightBall = table.balls.find((b) => b.label === 8)
+          // The 8-ball that just triggered table-clear is almost always the
+          // very ball potted this shot, so it's no longer in table.balls by
+          // this point (same reason respot() above reads Outcome.pots, not
+          // table.balls, for its foul respots) — check `pots` first.
+          const eightBall = pots.find((b) => b.label === 8) ?? table.balls.find((b) => b.label === 8)
           if (eightBall) {
             const footSpot = new Vector3(TableGeometry.tableX / 2, 0, 0)
             Respot.respotBehind(footSpot, eightBall, table)
