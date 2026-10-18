@@ -279,12 +279,8 @@ export class BrowserContainer {
     await relay.connect(
       mc,
       this.tableId,
-      () => {
-        this.container.chat.showMessage("🔌")
-      },
-      () => {
-        this.container.chat.showMessage("⚡")
-      }
+      () => {},
+      () => {}
     )
   }
 

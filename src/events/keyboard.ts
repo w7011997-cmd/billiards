@@ -1,5 +1,6 @@
 import { Input } from "./input"
 import interact from "interactjs"
+import { GamepadInput } from "./gamepad"
 
 /**
  * Maintains a map of pressed keys.
@@ -41,6 +42,7 @@ export class Keyboard {
   constructor(element: HTMLCanvasElement, opts: { disabled?: boolean } = {}) {
     this.disabled = opts.disabled ?? false
     this.addHandlers(element)
+    if (!this.disabled) new GamepadInput(this)
     if (!/Android|iPhone/i.test(navigator.userAgent)) {
       element.contentEditable = "true"
     }
