@@ -357,7 +357,7 @@ export class BrowserContainer {
       if (names.p1Name && names.p2Name) {
         this.container.notifyLocal({
           type: "Info",
-          title: `${this.ruletype}, ${names.p1Name} vs ${names.p2Name}`,
+          title: `${names.p1Name} vs ${names.p2Name}`,
           extra:
             this.ruletype === "threecushion"
               ? `Race to: ${ThreeCushionConfig.raceTo}`
