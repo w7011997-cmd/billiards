@@ -25,9 +25,14 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
+      - name: Stage site (game served at /dist/ and at the root)
+        run: |
+          mkdir -p site
+          cp -r dist site/dist
+          cp -r dist/. site/
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
       - id: deployment
         uses: actions/deploy-pages@v4
